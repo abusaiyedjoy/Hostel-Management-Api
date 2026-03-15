@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+  // previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  // url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MESS_MANAGER
+  MEAL_MANAGER
+  MEMBER
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACKS
+}
+
+enum MealStatus {
+  TAKEN
+  NOT_TAKEN
+  CANCELLED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  phone     String?
+  role      Role     @default(MEMBER)
+  image     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  messManager Mess?        @relation("MessManager")
+  mealManager MealManager? @relation("MealManager")
+  member      Member?      @relation("Member")
+  mealEntries MealEntry[]  @relation("UserMealEntries")
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Mess {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  phone       String
+  address     String
+  city        String
+  state       String
+  capacity    Int
+  ratePerMeal Float
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  managerId    String        @unique
+  manager      User          @relation("MessManager", fields: [managerId], references: [id], onDelete: Cascade)
+  members      Member[]
+  mealManagers MealManager[]
+  meals        Meal[]
+
+  @@index([managerId])
+  @@map("mess")
+}
+
+model Member {
+  id             String   @id @default(cuid())
+  registrationNo String   @unique
+  dateOfJoining  DateTime
+  totalBalance   Float    @default(0)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  userId      String      @unique
+  user        User        @relation("Member", fields: [userId], references: [id], onDelete: Cascade)
+  messId      String
+  mess        Mess        @relation(fields: [messId], references: [id], onDelete: Cascade)
+  mealEntries MealEntry[]
+
+  @@index([messId])
+  @@index([userId])
+  @@map("members")
+}
+
+model MealManager {
+  id        String   @id @default(cuid())
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  userId String @unique
+  user   User   @relation("MealManager", fields: [userId], references: [id], onDelete: Cascade)
+  messId String
+  mess   Mess   @relation(fields: [messId], references: [id], onDelete: Cascade)
+  meals  Meal[]
+
+  @@index([messId])
+  @@index([userId])
+  @@map("meal_managers")
+}
+
+model Meal {
+  id          String   @id @default(cuid())
+  mealType    MealType
+  date        DateTime
+  costPerMeal Float
+  totalCost   Float    @default(0)
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  messId        String
+  mess          Mess        @relation(fields: [messId], references: [id], onDelete: Cascade)
+  mealManagerId String
+  mealManager   MealManager @relation(fields: [mealManagerId], references: [id], onDelete: Cascade)
+  mealEntries   MealEntry[]
+
+  @@index([messId])
+  @@index([mealManagerId])
+  @@index([date])
+  @@map("meals")
+}
+
+model MealEntry {
+  id        String     @id @default(cuid())
+  status    MealStatus @default(TAKEN)
+  cost      Float
+  note      String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // Relations
+  userId   String
+  user     User   @relation("UserMealEntries", fields: [userId], references: [id], onDelete: Cascade)
+  memberId String
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  mealId   String
+  meal     Meal   @relation(fields: [mealId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([memberId])
+  @@index([mealId])
+  @@map("meal_entries")
+}
