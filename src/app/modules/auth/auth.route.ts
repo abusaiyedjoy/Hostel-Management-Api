@@ -6,7 +6,7 @@ import { AuthSchema } from "./auth.validation";
 
 const router = Router();
 
-// ─── Public Routes ────────────────────────────────
+// Public Routes
 router.post(
   "/register",
   validateRequest(AuthSchema.registerSchema),
@@ -19,7 +19,7 @@ router.post(
   AuthController.login,
 );
 
-// ─── Protected Routes ─────────────────────────────
+// Protected Routes
 router.get("/me", authorize("LOGGED_IN"), AuthController.getMe);
 
 router.patch(
