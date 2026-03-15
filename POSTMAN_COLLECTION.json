@@ -1,0 +1,318 @@
+{
+  "info": {
+    "name": "Hostel Management API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "adminToken", "value": "" },
+    { "key": "messManagerToken", "value": "" },
+    { "key": "mealManagerToken", "value": "" },
+    { "key": "memberToken", "value": "" },
+    { "key": "messId", "value": "" },
+    { "key": "memberId", "value": "" },
+    { "key": "mealId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@test.com\",\n  \"password\": \"john123\",\n  \"phone\": \"+1-1234567890\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('adminToken', pm.response.json().data?.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@hostelhub.com\",\n  \"password\": \"admin123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login Mess Manager",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('messManagerToken', pm.response.json().data?.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"manager@delhiboys.com\",\n  \"password\": \"manager123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login Meal Manager",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('mealManagerToken', pm.response.json().data?.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"meals@delhiboys.com\",\n  \"password\": \"meal123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login Member",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('memberToken', pm.response.json().data?.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"member1@delhiboys.com\",\n  \"password\": \"member1123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/me",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Users",
+      "item": [
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/users/stats",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ]
+          }
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/users?page=1&limit=10",
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "role", "value": "MEMBER", "disabled": true },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "isActive", "value": "true", "disabled": true }
+              ]
+            },
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mess",
+      "item": [
+        {
+          "name": "Get All Mess",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json().data; if(data && data[0]) pm.collectionVariables.set('messId', data[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/mess",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ]
+          }
+        },
+        {
+          "name": "Get My Mess",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/mess/my-mess",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{messManagerToken}}" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Members",
+      "item": [
+        {
+          "name": "Get All Members",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json().data; if(data && data[0]) pm.collectionVariables.set('memberId', data[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/mess/{{messId}}/members",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ]
+          }
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/members/my-profile",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ]
+          }
+        },
+        {
+          "name": "Get Meal Summary",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/members/{{memberId}}/meal-summary",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Meals",
+      "item": [
+        {
+          "name": "Create Meal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json().data; if(data) pm.collectionVariables.set('mealId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/mess/{{messId}}/meals",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mealManagerToken}}"
+              },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mealType\": \"LUNCH\",\n  \"date\": \"2024-03-15\",\n  \"costPerMeal\": 60,\n  \"note\": \"Special biryani\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Meals",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/mess/{{messId}}/meals",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ]
+          }
+        },
+        {
+          "name": "Get Monthly Summary",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/mess/{{messId}}/meals/summary",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ]
+          }
+        },
+        {
+          "name": "Bulk Create Entries",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/mess/{{messId}}/meals/{{mealId}}/entries/bulk",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mealManagerToken}}"
+              },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberIds\": [\"{{memberId}}\"],\n  \"status\": \"TAKEN\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
