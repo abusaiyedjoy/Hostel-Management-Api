@@ -1,6 +1,7 @@
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../utils/AppError";
 import { HTTP_STATUS } from "../../utils/httpStatus";
+import { NotificationService } from "../notification/notification.service";
 import type {
   TAddMemberInput,
   TUpdateMemberInput,
@@ -120,6 +121,16 @@ const addMember = async (
       totalBalance: payload.totalBalance,
     },
     select: memberSelect,
+  });
+
+  await NotificationService.create({
+    userId: payload.userId,
+    title: "Welcome to the mess!",
+    message: `You have been added as a member of the mess. Your registration number is ${member.registrationNo}.`,
+    type: "MEMBER",
+    messId: payload.messId,
+    relatedId: member.id,
+    relatedType: "MEMBER",
   });
 
   return member;
@@ -384,6 +395,18 @@ const updateMember = async (
     select: memberSelect,
   });
 
+  if (payload.totalBalance !== undefined) {
+    await NotificationService.create({
+      userId: updatedMember.user.id,
+      title: "Balance updated",
+      message: `Your meal balance has been updated to ${payload.totalBalance}.`,
+      type: "BALANCE",
+      messId: updatedMember.mess.id,
+      relatedId: updatedMember.id,
+      relatedType: "MEMBER",
+    });
+  }
+
   return updatedMember;
 };
 
@@ -415,6 +438,13 @@ const removeMember = async (
       HTTP_STATUS.FORBIDDEN,
     );
   }
+
+  await NotificationService.create({
+    userId: member.id,
+    title: "Removed from mess",
+    message: "You have been removed from the mess.",
+    type: "MEMBER",
+  });
 
   await prisma.member.delete({ where: { id: memberId } });
 

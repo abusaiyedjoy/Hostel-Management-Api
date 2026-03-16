@@ -11,6 +11,7 @@ import {
   MealManagerRoutes,
 } from "../app/modules/meal/meal.route";
 import { MealRoutes } from "../app/modules/mealManager/mealManager.route";
+import { NotificationRoutes } from "../app/modules/notification/notification.route";
 
 const router = Router();
 
@@ -41,5 +42,8 @@ router.use("/meal-managers", MealManagerRoutes);
 
 //  Meals
 router.use("/mess/:messId/meals", MealRoutes);
+
+// Notifications
+router.use("/notifications", NotificationRoutes);
 
 export const appRoutes = router;

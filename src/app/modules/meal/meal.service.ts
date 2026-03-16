@@ -1,6 +1,7 @@
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../utils/AppError";
 import { HTTP_STATUS } from "../../utils/httpStatus";
+import { NotificationService } from "../notification/notification.service";
 import type {
   TAssignMealManagerInput,
   TGetMealManagersQuery,
@@ -102,6 +103,16 @@ const assignMealManager = async (
       messId,
     },
     select: mealManagerSelect,
+  });
+
+  await NotificationService.create({
+    userId: payload.userId,
+    title: "You are now a meal manager",
+    message: `You have been assigned as meal manager for ${mealManager.mess.name}.`,
+    type: "MESS",
+    messId: messId,
+    relatedId: mealManager.id,
+    relatedType: "MEAL_MANAGER",
   });
 
   return mealManager;
@@ -328,6 +339,13 @@ const removeMealManager = async (
   await prisma.user.update({
     where: { id: mealManager.userId },
     data: { role: "MEMBER" },
+  });
+
+  await NotificationService.create({
+    userId: mealManager.userId,
+    title: "Meal manager role removed",
+    message: "You have been removed from the meal manager role.",
+    type: "MESS",
   });
 
   await prisma.mealManager.delete({ where: { id: mealManagerId } });

@@ -7,6 +7,7 @@ import type {
   TUpdateStatusInput,
   TGetUsersQuery,
 } from "./user.validation";
+import { NotificationService } from "../notification/notification.service";
 
 // Safe user fields reused across queries
 const safeUserSelect = {
@@ -182,6 +183,15 @@ const updateUserRole = async (
     select: safeUserSelect,
   });
 
+  await NotificationService.create({
+    userId: targetUserId,
+    title: "Your role has been updated",
+    message: `Your account role has been changed to ${payload.role}.`,
+    type: "ROLE",
+    relatedId: targetUserId,
+    relatedType: "USER",
+  });
+
   return updatedUser;
 };
 
@@ -219,6 +229,15 @@ const updateUserStatus = async (
     where: { id: targetUserId },
     data: { isActive: payload.isActive },
     select: safeUserSelect,
+  });
+
+  await NotificationService.create({
+    userId: targetUserId,
+    title: `Account ${payload.isActive ? "activated" : "deactivated"}`,
+    message: `Your account has been ${payload.isActive ? "activated" : "deactivated"}.`,
+    type: "SYSTEM",
+    relatedId: targetUserId,
+    relatedType: "USER",
   });
 
   return updatedUser;

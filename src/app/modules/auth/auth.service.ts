@@ -9,6 +9,7 @@ import type {
   TChangePasswordInput,
   TUpdateProfileInput,
 } from "./auth.validation";
+import { NotificationService } from "../notification/notification.service";
 
 // Selected fields reused across queries
 const safeUserSelect = {
@@ -44,6 +45,13 @@ const register = async (payload: TRegisterInput) => {
       role: "MEMBER",
     },
     select: safeUserSelect,
+  });
+
+  await NotificationService.create({
+    userId: user.id,
+    title: "Welcome to Hostel Hub!",
+    message: `Hi ${user.name}, your account has been created successfully.`,
+    type: "SYSTEM",
   });
 
   const accessToken = JwtUtils.generate({

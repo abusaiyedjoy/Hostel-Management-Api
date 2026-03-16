@@ -1,6 +1,7 @@
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../utils/AppError";
 import { HTTP_STATUS } from "../../utils/httpStatus";
+import { NotificationService } from "../notification/notification.service";
 import type {
   TCreateMealInput,
   TUpdateMealInput,
@@ -161,6 +162,14 @@ const createMeal = async (
       mealManagerId,
     },
     select: mealSelect,
+  });
+
+  await NotificationService.notifyMessMembers(messId, {
+    title: `New ${payload.mealType.toLowerCase()} meal added`,
+    message: `A new ${payload.mealType.toLowerCase()} meal has been scheduled for ${new Date(payload.date).toDateString()}. Cost: ${payload.costPerMeal} per meal.`,
+    type: "MEAL",
+    relatedId: meal.id,
+    relatedType: "MEAL",
   });
 
   return meal;
@@ -541,6 +550,21 @@ const updateMealEntry = async (
     },
     select: mealEntrySelect,
   });
+
+  const member = await prisma.member.findUnique({
+    where: { id: userId },
+    select: { userId: true },
+  });
+  if (member) {
+    await NotificationService.create({
+      userId: member.userId,
+      title: "Meal entry updated",
+      message: `Your meal status has been updated to ${payload.status}.`,
+      type: "MEAL",
+      relatedId: entry.meal.id,
+      relatedType: "MEAL",
+    });
+  }
 
   // Update meal total cost
   if (costDiff !== 0) {
