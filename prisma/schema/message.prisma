@@ -1,0 +1,26 @@
+enum MessageType {
+    TEXT
+    IMAGE
+    SYSTEM
+}
+
+model Message {
+    id        String      @id @default(cuid())
+    content   String
+    type      MessageType @default(TEXT)
+    isEdited  Boolean     @default(false)
+    isDeleted Boolean     @default(false)
+    createdAt DateTime    @default(now())
+    updatedAt DateTime    @updatedAt
+
+    senderId String
+    sender   User   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+    messId String
+    mess   Mess   @relation("MessMessages", fields: [messId], references: [id], onDelete: Cascade)
+
+    @@index([messId])
+    @@index([senderId])
+    @@index([createdAt])
+    @@map("messages")
+}

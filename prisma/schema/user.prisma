@@ -1,0 +1,31 @@
+enum Role {
+    ADMIN
+    MESS_MANAGER
+    MEAL_MANAGER
+    MEMBER
+}
+
+model User {
+    id        String   @id @default(cuid())
+    name      String
+    email     String   @unique
+    password  String
+    phone     String?
+    role      Role     @default(MEMBER)
+    image     String?
+    isActive  Boolean  @default(true)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    messManager   Mess?          @relation("MessManager")
+    mealManager   MealManager?   @relation("MealManager")
+    member        Member?        @relation("Member")
+    mealEntries   MealEntry[]    @relation("UserMealEntries")
+    notifications Notification[] @relation("UserNotifications")
+    sentMessages  Message[]      @relation("SentMessages")
+
+    @@index([email])
+    @@index([role])
+    @@map("users")
+}
