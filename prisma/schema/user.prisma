@@ -24,6 +24,7 @@ model User {
     mealEntries   MealEntry[]    @relation("UserMealEntries")
     notifications Notification[] @relation("UserNotifications")
     sentMessages  Message[]      @relation("SentMessages")
+    payments      Payment[]      @relation("UserPayments")
 
     @@index([email])
     @@index([role])

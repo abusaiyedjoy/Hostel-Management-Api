@@ -53,6 +53,7 @@ model Member {
     messId      String
     mess        Mess        @relation(fields: [messId], references: [id], onDelete: Cascade)
     mealEntries MealEntry[]
+    payments    Payment[]   @relation("MemberPayments")
 
     @@index([messId])
     @@index([userId])

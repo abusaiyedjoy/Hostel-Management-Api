@@ -1,0 +1,37 @@
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  BKASH
+}
+
+model Payment {
+  id             String          @id @default(cuid())
+  amount         Float
+  currency       String          @default("BDT")
+  status         PaymentStatus   @default(PENDING)
+  provider       PaymentProvider @default(BKASH)
+  bkashPaymentId String?         @unique
+  bkashTrxId     String?         @unique
+  bkashToken     String?
+  callbackData   Json?
+  failureReason  String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  memberId String
+  member   Member @relation("MemberPayments", fields: [memberId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation("UserPayments", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@index([userId])
+  @@index([status])
+  @@index([bkashPaymentId])
+  @@map("payments")
+}

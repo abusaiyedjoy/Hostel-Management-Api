@@ -6,6 +6,7 @@ import type {
   TGetNotificationsQuery,
   TMarkReadInput,
 } from "./notification.validation";
+import { emitToUser } from "../../utils/socket";
 
 // ─── Types ────────────────────────────────────────
 type TCreateNotificationPayload = {
@@ -44,25 +45,29 @@ const notificationSelect = {
 
 // ==================== CREATE (single) ====================
 const create = async (payload: TCreateNotificationPayload) => {
-  return prisma.notification.create({
-    data: {
-      userId: payload.userId,
-      title: payload.title,
-      message: payload.message,
-      type: payload.type,
-      messId: payload.messId,
-      relatedId: payload.relatedId,
-      relatedType: payload.relatedType,
-    },
+  const notification = await prisma.notification.create({
+    data: { ...payload },
     select: notificationSelect,
   });
+
+  // Emit real-time to that user
+  try {
+    emitToUser(payload.userId, "notification:new", notification);
+
+    const unreadCount = await prisma.notification.count({
+      where: { userId: payload.userId, isRead: false },
+    });
+    emitToUser(payload.userId, "notification:unread-count", { unreadCount });
+  } catch {
+    // Socket might not be initialized during seeding — ignore
+  }
+
+  return notification;
 };
 
-// ==================== CREATE BULK ====================
+// ==================== CREATE BULK with message ====================
 const createBulk = async (payload: TCreateBulkNotificationPayload) => {
-  if (payload.userIds.length === 0) return;
-
-  await prisma.notification.createMany({
+  const notifications = await prisma.notification.createMany({
     data: payload.userIds.map((userId) => ({
       userId,
       title: payload.title,
@@ -72,7 +77,24 @@ const createBulk = async (payload: TCreateBulkNotificationPayload) => {
       relatedId: payload.relatedId,
       relatedType: payload.relatedType,
     })),
+    select: notificationSelect,
   });
+
+  // Emit real-time to those users
+  try {
+    payload.userIds.forEach((userId) => {
+      emitToUser(userId, "notification:new", notifications);
+
+      const unreadCount = prisma.notification.count({
+        where: { userId, isRead: false },
+      });
+      emitToUser(userId, "notification:unread-count", { unreadCount });
+    });
+  } catch {
+    // Socket might not be initialized during seeding — ignore
+  }
+
+  return notifications;
 };
 
 // ==================== NOTIFY ALL MESS MEMBERS ====================
