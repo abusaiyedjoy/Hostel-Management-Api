@@ -4,11 +4,16 @@ const initiatePaymentSchema = z.object({
   body: z.object({
     amount: z
       .number({ error: "Amount is required" })
-      .min(1, "Minimum amount is 1 BDT")
-      .max(50000, "Maximum amount is 50,000 BDT"),
+      .min(1, "Minimum amount is 1")
+      .max(100000, "Maximum amount is 100,000"),
     memberId: z
       .string({ error: "Member ID is required" })
       .cuid("Invalid member ID"),
+    provider: z.enum(["BKASH", "STRIPE", "SSLCOMMERZ"], {
+      error: "Payment provider is required",
+      // invalid_type_error: "Provider must be BKASH, STRIPE, or SSLCOMMERZ",
+    }),
+    currency: z.enum(["BDT", "USD", "EUR", "GBP"]).optional().default("BDT"),
   }),
 });
 
@@ -19,6 +24,7 @@ const getPaymentsQuerySchema = z.object({
     status: z
       .enum(["PENDING", "SUCCESS", "FAILED", "CANCELLED", "REFUNDED"])
       .optional(),
+    provider: z.enum(["BKASH", "STRIPE", "SSLCOMMERZ"]).optional(),
     memberId: z.string().cuid("Invalid member ID").optional(),
   }),
 });

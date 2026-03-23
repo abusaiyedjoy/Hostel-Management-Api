@@ -3,41 +3,88 @@ import handleController from "../../utils/asyncHandler";
 import sendResponse from "../../utils/response";
 import { HTTP_STATUS } from "../../utils/httpStatus";
 import { PaymentService } from "./payment.service";
+import { env } from "../../config/env";
 
-// POST /api/payment/initiate
 const initiatePayment = handleController(
   async (req: Request, res: Response) => {
     const result = await PaymentService.initiatePayment(req.body, req.user!.id);
-
     sendResponse(res, {
       statusCode: HTTP_STATUS.CREATED,
       success: true,
-      message: "Payment initiated. Redirect user to bkashURL.",
+      message: "Payment initiated. Redirect user to the provided URL.",
       data: result,
     });
   },
 );
 
-// GET /api/payment/callback  (called by bKash — no auth)
-const handleCallback = handleController(async (req: Request, res: Response) => {
-  const result = await PaymentService.handleCallback(req.query as any);
+// ── bKash callback (GET, public) ──────────────────
+const handleBkashCallback = handleController(
+  async (req: Request, res: Response) => {
+    const result = await PaymentService.handleBkashCallback(req.query as any);
+    sendResponse(res, {
+      statusCode: result.success ? HTTP_STATUS.OK : HTTP_STATUS.BAD_REQUEST,
+      success: result.success,
+      message: result.message,
+      data: result,
+    });
+  },
+);
 
-  // bKash expects a redirect — send JSON for API clients
+// ── Stripe webhook (POST, raw body, public) ───────
+const handleStripeWebhook = handleController(
+  async (req: Request, res: Response) => {
+    const result = await PaymentService.handleStripeWebhook(req);
+    sendResponse(res, {
+      statusCode: HTTP_STATUS.OK,
+      success: true,
+      message: "Webhook received",
+      data: result,
+    });
+  },
+);
+
+// ── SSL success (POST, public) ────────────────────
+const handleSslSuccess = handleController(
+  async (req: Request, res: Response) => {
+    const result = await PaymentService.handleSslSuccess(req.body);
+    if (result.success) {
+      res.redirect(env.SSL.FRONTEND_SUCCESS_URL);
+    } else {
+      res.redirect(env.SSL.FRONTEND_FAIL_URL);
+    }
+  },
+);
+
+// ── SSL fail (POST, public) ───────────────────────
+const handleSslFail = handleController(async (req: Request, res: Response) => {
+  await PaymentService.handleSslFailOrCancel(req.body, "FAILED");
+  res.redirect(env.SSL.FRONTEND_FAIL_URL);
+});
+
+// ── SSL cancel (POST, public) ─────────────────────
+const handleSslCancel = handleController(
+  async (req: Request, res: Response) => {
+    await PaymentService.handleSslFailOrCancel(req.body, "CANCELLED");
+    res.redirect(env.SSL.FRONTEND_FAIL_URL);
+  },
+);
+
+// ── SSL IPN (POST, public) ────────────────────────
+const handleSslIPN = handleController(async (req: Request, res: Response) => {
+  const result = await PaymentService.handleSslIPN(req.body);
   sendResponse(res, {
-    statusCode: result.success ? HTTP_STATUS.OK : HTTP_STATUS.BAD_REQUEST,
-    success: result.success,
-    message: result.message,
+    statusCode: HTTP_STATUS.OK,
+    success: true,
+    message: "IPN received",
     data: result,
   });
 });
 
-// GET /api/payment/my-payments
 const getMyPayments = handleController(async (req: Request, res: Response) => {
   const result = await PaymentService.getMyPayments(
     req.user!.id,
     req.query as any,
   );
-
   sendResponse(res, {
     statusCode: HTTP_STATUS.OK,
     success: true,
@@ -47,59 +94,36 @@ const getMyPayments = handleController(async (req: Request, res: Response) => {
   });
 });
 
-// GET /api/payment/all  (Admin)
 const getAllPayments = handleController(async (req: Request, res: Response) => {
   const result = await PaymentService.getAllPayments(req.query as any);
-
   sendResponse(res, {
     statusCode: HTTP_STATUS.OK,
     success: true,
-    message: "All payments fetched successfully",
+    message: "All payments fetched",
     meta: result.meta,
     data: { payments: result.payments, stats: result.stats },
   });
 });
 
-// GET /api/payment/:id
 const getPaymentById = handleController(async (req: Request, res: Response) => {
   const payment = await PaymentService.getPaymentById(
     req.params.id as string,
     req.user!.id,
     req.user!.role,
   );
-
   sendResponse(res, {
     statusCode: HTTP_STATUS.OK,
     success: true,
-    message: "Payment fetched successfully",
+    message: "Payment fetched",
     data: payment,
   });
 });
 
-// GET /api/payment/:id/status
-const queryPaymentStatus = handleController(
-  async (req: Request, res: Response) => {
-    const result = await PaymentService.queryPaymentStatus(
-      req.params.id as string,
-      req.user!.id,
-    );
-
-    sendResponse(res, {
-      statusCode: HTTP_STATUS.OK,
-      success: true,
-      message: "Payment status fetched",
-      data: result,
-    });
-  },
-);
-
-// POST /api/payment/:id/refund  (Admin)
 const refundPayment = handleController(async (req: Request, res: Response) => {
   const result = await PaymentService.refundPayment(
     req.params.id as string,
     req.body,
   );
-
   sendResponse(res, {
     statusCode: HTTP_STATUS.OK,
     success: true,
@@ -110,10 +134,14 @@ const refundPayment = handleController(async (req: Request, res: Response) => {
 
 export const PaymentController = {
   initiatePayment,
-  handleCallback,
+  handleBkashCallback,
+  handleStripeWebhook,
+  handleSslSuccess,
+  handleSslFail,
+  handleSslCancel,
+  handleSslIPN,
   getMyPayments,
   getAllPayments,
   getPaymentById,
-  queryPaymentStatus,
   refundPayment,
 };

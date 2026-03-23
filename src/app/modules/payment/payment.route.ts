@@ -1,4 +1,5 @@
 import { Router } from "express";
+import express from "express";
 import { PaymentController } from "./payment.controller";
 import { PaymentSchema } from "./payment.validation";
 import { authorize } from "../../middlewares/auth.middleware";
@@ -6,10 +7,7 @@ import validateRequest from "../../middlewares/validateRequest.middleware";
 
 const router = Router();
 
-// ─── Public (bKash hits this) ──────────────────────
-router.get("/callback", PaymentController.handleCallback);
-
-// ─── Member ────────────────────────────────────────
+// ─── Member: initiate payment ──────────────────────
 router.post(
   "/initiate",
   authorize("MEMBER"),
@@ -17,6 +15,23 @@ router.post(
   PaymentController.initiatePayment,
 );
 
+// ─── bKash callback (public) ──────────────────────
+router.get("/bkash/callback", PaymentController.handleBkashCallback);
+
+// ─── Stripe webhook (raw body required) ───────────
+router.post(
+  "/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  PaymentController.handleStripeWebhook,
+);
+
+// ─── SSLCommerz callbacks (public) ────────────────
+router.post("/ssl/success", PaymentController.handleSslSuccess);
+router.post("/ssl/fail", PaymentController.handleSslFail);
+router.post("/ssl/cancel", PaymentController.handleSslCancel);
+router.post("/ssl/ipn", PaymentController.handleSslIPN);
+
+// ─── Authenticated: history ────────────────────────
 router.get(
   "/my-payments",
   authorize("LOGGED_IN"),
@@ -24,15 +39,9 @@ router.get(
   PaymentController.getMyPayments,
 );
 
-router.get(
-  "/:id/status",
-  authorize("LOGGED_IN"),
-  PaymentController.queryPaymentStatus,
-);
-
 router.get("/:id", authorize("LOGGED_IN"), PaymentController.getPaymentById);
 
-// ─── Admin ─────────────────────────────────────────
+// ─── Admin only ────────────────────────────────────
 router.get(
   "/admin/all",
   authorize("ADMIN"),

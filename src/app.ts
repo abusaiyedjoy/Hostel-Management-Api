@@ -7,6 +7,11 @@ import { HTTP_STATUS } from "./app/utils/httpStatus";
 
 const app = express();
 
+app.use(
+  "/api/payment/stripe/webhook",
+  express.raw({ type: "application/json" }),
+);
+
 //  Core Middlewares
 app.use(cors());
 app.use(express.json());

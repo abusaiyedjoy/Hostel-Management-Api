@@ -58,14 +58,58 @@ const updateProfileSchema = z.object({
   }),
 });
 
-export type TRegisterInput = z.infer<typeof registerSchema>["body"];
-export type TLoginInput = z.infer<typeof loginSchema>["body"];
-export type TChangePasswordInput = z.infer<typeof changePasswordSchema>["body"];
-export type TUpdateProfileInput = z.infer<typeof updateProfileSchema>["body"];
+const forgotPasswordSchema = z.object({
+  body: z.object({
+    identifier: z
+      .string({ error: "Email or phone is required" })
+      .min(5, "Invalid email or phone")
+      .trim(),
+    channel: z.enum(["EMAIL", "PHONE"], {
+      error: "Channel is required",
+    }),
+  }),
+});
+
+const resetPasswordSchema = z.object({
+  body: z.object({
+    identifier: z.string().min(5).trim(),
+    otp: z
+      .string({ error: "OTP is required" })
+      .length(6, "OTP must be 6 digits")
+      .regex(/^\d{6}$/),
+    channel: z.enum(["EMAIL", "PHONE"]),
+    newPassword: z
+      .string({ error: "New password is required" })
+      .min(6, "Password must be at least 6 characters")
+      .max(32),
+  }),
+});
+
+const verifyAccountSchema = z.object({
+  body: z.object({
+    identifier: z.string().min(5).trim(),
+    otp: z
+      .string({ error: "OTP is required" })
+      .length(6, "OTP must be 6 digits")
+      .regex(/^\d{6}$/),
+    channel: z.enum(["EMAIL", "PHONE"]),
+  }),
+});
 
 export const AuthSchema = {
   registerSchema,
   loginSchema,
   changePasswordSchema,
   updateProfileSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  verifyAccountSchema,
 };
+
+export type TForgotPasswordInput = z.infer<typeof forgotPasswordSchema>["body"];
+export type TResetPasswordInput = z.infer<typeof resetPasswordSchema>["body"];
+export type TVerifyAccountInput = z.infer<typeof verifyAccountSchema>["body"];
+export type TRegisterInput = z.infer<typeof registerSchema>["body"];
+export type TLoginInput = z.infer<typeof loginSchema>["body"];
+export type TChangePasswordInput = z.infer<typeof changePasswordSchema>["body"];
+export type TUpdateProfileInput = z.infer<typeof updateProfileSchema>["body"];

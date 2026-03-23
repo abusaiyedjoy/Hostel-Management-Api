@@ -7,6 +7,7 @@ import { env } from "./app/config/env";
 import { prisma } from "./app/config/prisma";
 import { initSocket } from "./app/utils/socket";
 import os from "os";
+import { redis } from "./app/config/redis";
 
 const getNetworkIP = (): string => {
   const interfaces = os.networkInterfaces();
@@ -23,6 +24,9 @@ const getNetworkIP = (): string => {
 const startServer = async () => {
   try {
     await prisma.$connect();
+
+    await redis.connect();
+    console.log("✅ Redis connected");
 
     // Create HTTP server from Express app
     const httpServer = http.createServer(app);
@@ -85,6 +89,8 @@ process.on("SIGTERM", async () => {
   console.log("\n⚠️  SIGTERM received. Shutting down gracefully...");
   await prisma.$disconnect();
   console.log("✅ Database disconnected");
+  await redis.quit();
+  console.log("✅ Redis disconnected");
   process.exit(0);
 });
 

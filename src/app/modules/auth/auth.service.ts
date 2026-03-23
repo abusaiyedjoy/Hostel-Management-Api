@@ -4,12 +4,16 @@ import { JwtUtils } from "../../utils/jwt";
 import { AppError } from "../../utils/AppError";
 import { HTTP_STATUS } from "../../utils/httpStatus";
 import type {
+  TResetPasswordInput,
+  TForgotPasswordInput,
+  TVerifyAccountInput,
   TRegisterInput,
   TLoginInput,
   TChangePasswordInput,
   TUpdateProfileInput,
 } from "./auth.validation";
 import { NotificationService } from "../notification/notification.service";
+import { sendOtp, verifyOtp } from "../otp/otp.service";
 
 // Selected fields reused across queries
 const safeUserSelect = {
@@ -214,10 +218,76 @@ const updateProfile = async (userId: string, payload: TUpdateProfileInput) => {
   return user;
 };
 
+const sendVerifyAccountOtp = async (payload: TForgotPasswordInput) => {
+  return sendOtp({
+    identifier: payload.identifier,
+    purpose: "VERIFY_EMAIL",
+    channel: payload.channel,
+  });
+};
+
+// ==================== VERIFY ACCOUNT ====================
+const verifyAccount = async (payload: TVerifyAccountInput) => {
+  const user = await verifyOtp({
+    identifier: payload.identifier,
+    otp: payload.otp,
+    purpose: "VERIFY_EMAIL",
+    channel: payload.channel,
+  });
+
+  // Mark user as verified
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { isVerified: true },
+  });
+
+  const accessToken = JwtUtils.generate({
+    id: user.id,
+    email: user.email,
+    role: user.role,
+  });
+
+  return { message: "Account verified successfully", accessToken };
+};
+
+// ==================== FORGOT PASSWORD — SEND OTP ====================
+const forgotPassword = async (payload: TForgotPasswordInput) => {
+  return sendOtp({
+    identifier: payload.identifier,
+    purpose: "FORGOT_PASSWORD",
+    channel: payload.channel,
+  });
+};
+
+// ==================== RESET PASSWORD ====================
+const resetPassword = async (payload: TResetPasswordInput) => {
+  // Verify OTP first
+  const user = await verifyOtp({
+    identifier: payload.identifier,
+    otp: payload.otp,
+    purpose: "FORGOT_PASSWORD",
+    channel: payload.channel,
+  });
+
+  const hashedPassword = await bcrypt.hash(payload.newPassword, 12);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { password: hashedPassword },
+  });
+
+  return { message: "Password reset successfully" };
+};
+
+// Add to AuthService export:
 export const AuthService = {
   register,
   login,
   getMe,
   changePassword,
   updateProfile,
+  sendVerifyAccountOtp, // ← new
+  verifyAccount, // ← new
+  forgotPassword, // ← new
+  resetPassword, // ← new
 };

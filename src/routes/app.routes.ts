@@ -14,6 +14,7 @@ import { MealRoutes } from "../app/modules/mealManager/mealManager.route";
 import { NotificationRoutes } from "../app/modules/notification/notification.route";
 import { MessageRoutes } from "../app/modules/message/message.route";
 import { PaymentRoutes } from "../app/modules/payment/payment.route";
+import { OtpRoutes } from "../app/modules/otp/otp.route";
 
 const router = Router();
 
@@ -53,5 +54,8 @@ router.use("/mess/:messId/messages", MessageRoutes);
 
 // Payments
 router.use("/payment", PaymentRoutes);
+
+// OTP
+router.use("/otp", OtpRoutes);
 
 export const appRoutes = router;

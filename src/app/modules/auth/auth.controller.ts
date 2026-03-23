@@ -59,10 +59,61 @@ const updateProfile = handleController(async (req: Request, res: Response) => {
   });
 });
 
+// POST /api/auth/send-verify-otp
+const sendVerifyAccountOtp = handleController(
+  async (req: Request, res: Response) => {
+    const result = await AuthService.sendVerifyAccountOtp(req.body);
+    sendResponse(res, {
+      statusCode: HTTP_STATUS.OK,
+      success: true,
+      message: result.message,
+      data: { expiresInSeconds: result.expiresInSeconds },
+    });
+  },
+);
+
+// POST /api/auth/verify-account
+const verifyAccount = handleController(async (req: Request, res: Response) => {
+  const result = await AuthService.verifyAccount(req.body);
+  sendResponse(res, {
+    statusCode: HTTP_STATUS.OK,
+    success: true,
+    message: result.message,
+    data: { accessToken: result.accessToken },
+  });
+});
+
+// POST /api/auth/forgot-password
+const forgotPassword = handleController(async (req: Request, res: Response) => {
+  const result = await AuthService.forgotPassword(req.body);
+  sendResponse(res, {
+    statusCode: HTTP_STATUS.OK,
+    success: true,
+    message: result.message,
+    data: { expiresInSeconds: result.expiresInSeconds },
+  });
+});
+
+// POST /api/auth/reset-password
+const resetPassword = handleController(async (req: Request, res: Response) => {
+  const result = await AuthService.resetPassword(req.body);
+  sendResponse(res, {
+    statusCode: HTTP_STATUS.OK,
+    success: true,
+    message: result.message,
+    data: null,
+  });
+});
+
+// Add to AuthController export:
 export const AuthController = {
   register,
   login,
   getMe,
   changePassword,
   updateProfile,
+  sendVerifyAccountOtp, // ← new
+  verifyAccount, // ← new
+  forgotPassword, // ← new
+  resetPassword, // ← new
 };

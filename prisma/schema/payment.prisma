@@ -8,21 +8,34 @@ enum PaymentStatus {
 
 enum PaymentProvider {
   BKASH
+  STRIPE
+  SSLCOMMERZ
 }
 
 model Payment {
-  id             String          @id @default(cuid())
-  amount         Float
-  currency       String          @default("BDT")
-  status         PaymentStatus   @default(PENDING)
-  provider       PaymentProvider @default(BKASH)
-  bkashPaymentId String?         @unique
-  bkashTrxId     String?         @unique
-  bkashToken     String?
-  callbackData   Json?
-  failureReason  String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id            String          @id @default(cuid())
+  amount        Float
+  currency      String          @default("BDT")
+  status        PaymentStatus   @default(PENDING)
+  provider      PaymentProvider
+  invoiceNumber String          @unique
+
+  // bKash
+  bkashPaymentId String? @unique
+  bkashTrxId     String? @unique
+
+  // Stripe
+  stripeSessionId       String? @unique
+  stripePaymentIntentId String? @unique
+
+  // SSLCommerz
+  sslTranId String? @unique
+  sslValId  String?
+
+  callbackData  Json?
+  failureReason String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   memberId String
   member   Member @relation("MemberPayments", fields: [memberId], references: [id], onDelete: Cascade)
@@ -32,6 +45,7 @@ model Payment {
   @@index([memberId])
   @@index([userId])
   @@index([status])
-  @@index([bkashPaymentId])
+  @@index([provider])
+  @@index([invoiceNumber])
   @@map("payments")
 }
